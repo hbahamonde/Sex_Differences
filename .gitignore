@@ -309,3 +309,9 @@ WVS_data/.DS_Store
 *.rdata
 
 *.dta
+
+.Rhistory
+
+WVS_data/wvs.csv
+
+WVS_data/WVS_TimeSeries.pdf
