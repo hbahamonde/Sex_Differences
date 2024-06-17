@@ -73,14 +73,39 @@ sex.diff.d = sex.diff.d[order(sex.diff.d$Country, decreasing = F),]
 sex.diff.d = merge(sex.diff.long.id.d, sex.diff.d, by = c("Country"))
 
 # Import WVS data
+p_load(foreign)
+#  saveold wvs, replace
+wvs.d <- read_dta("/Users/hectorbahamonde/Seafile/GGGI/Sex_Differences/WVS_data/wvs.dta") # encoding = "UTF-8"
+
+# S020 Year
+# COUNTRY_NUM Country
+# COUNTRY_ALPHA Country
+# E069_12.- Confidence: The Political Parties
+# A004.- Important in life: Politics
+# A124_18.- Neighbours: Political Extremists
+# D059.- Men make better political leaders than women do
+# E023.- Interest in politics
+# E025.- Political action: Signing a petition
+# E026.- Political action: joining in boycotts
+# E033.- Self positioning in political scale
+# E069_12.- Confidence: The Political Parties
+# E117.- Political system: Having a democratic political system
+
+p_load(tidyverse)
+wvs.ts.d = wvs.ts.d %>%  select(
+  V1, V2, V7, V61, V95, V96, V97, V114, V139, V151) # V43_07
+
+
+
 ## https://www.worldvaluessurvey.org/WVSContents.jsp
-p_load(haven)
+p_load(foreign)
 #  saveold WVS7, replace  version(12)
 WVS_W5 <- read_dta("/Users/hectorbahamonde/Seafile/GGGI/Sex_Differences/WVS_data/WVS5.dta")
 WVS_W6 <- read_dta("/Users/hectorbahamonde/Seafile/GGGI/Sex_Differences/WVS_data/WVS6.dta", encoding = "UTF-8")
 WVS_W7 <- read.dta("/Users/hectorbahamonde/Seafile/GGGI/Sex_Differences/WVS_data/WVS7.dta")
 
 # assign labels
+p_load(haven)
 WVS_W5 <- haven::as_factor(WVS_W5, levels="labels"); names(WVS_W5) <- paste0(names(WVS_W5), "_label")
 WVS_W6 <- haven::as_factor(WVS_W6, levels="labels"); names(WVS_W6) <- paste0(names(WVS_W6), "_label")
 
@@ -127,6 +152,33 @@ WVS_W7 <- WVS_W7 %>% rename(
 # append all df's
 p_load(dplyr)
 wvs.d = dplyr::bind_rows(WVS_W5, WVS_W6, WVS_W7)
+rownames(wvs.d) <- NULL
+# table(wvs.d$V1) gives that years 2005-2007 N: 83975 obs. Next are 
+# individual years with data available between 2017 and 2023.
+# I will drop everything else to have individual-year data to merge with the sex.diff.d
+wvs.d  = wvs.d %>% filter(V1 == 2017 | V1 == 2018  | V1 == 2019 | V1 == 2019 | V1 == 2020 | V1 == 2021 | V1 == 2022 | V1 == 2023 )
 
+p_load(dplyr)
+wvs.d <- wvs.d %>% rename("Country" = "V2",
+                          "Year" = "V1",
+                          #
+                          "politics.important" = "V7", # Politics is important
+                          "men.better.pol.leaders" = "V61", ## V61 Men make better political leaders
+                          "interested.in.politics" = "V95", #  Interested in politics
+                          "sign.petition" = "V96", ## V96 Political action: signing a petition
+                          "joining.boycotts" =  "V97", # ## V97 Political action: joining in boycotts
+                          "left.right" = "V114", ## V114 Self positioning in political scale
+                          "conf.pol.parties" =  "V139", ## V139 Confidence: The Political Parties
+                          "having.dem.system" = "V151" ## V151 Having a democratic political system
+                          )
 
+wvs.d$Year = as.numeric(as.character(wvs.d$Year)) 
+
+#
+p_load(dplyr)
+sex.diff.d = sex.diff.d %>% arrange(Country, Year)
+sex.diff.d$Year = as.numeric(as.character(sex.diff.d$Year)) 
+
+# merge 
+dat = merge(sex.diff.d, wvs.d, by = c("Country", "Year"))
 
